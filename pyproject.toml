@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "workspace-groups-creator"
+version = "1.0"
+description = "Automatically creates Google Workspace Groups based on catch-all e-mails in one's GMail inbox"
+authors = ["Guus Huizen <guus@guus.tech>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+google-api-python-client = "^2.49.0"
+google-auth-oauthlib = "^0.5.1"
+python-dotenv = "^0.20.0"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
