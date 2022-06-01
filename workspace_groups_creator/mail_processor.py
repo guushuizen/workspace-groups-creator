@@ -38,11 +38,6 @@ class MailProcessor:
             return True
 
     def process_mail(self, message_id: str):
-        # 1. Fetch mail
-        # 2. Check if group exists for original recipient
-        # 3. (Optionally) Create group
-        # 4. Forward e-mail to group
-        # 5. Trash given email
         message = self.gmail_client.users().messages().get(userId="me", id=message_id, format="full").execute()
 
         original_recipient = next((h["value"] for h in message['payload']['headers'] if h["name"] == "To"), None)
@@ -52,6 +47,8 @@ class MailProcessor:
         self.find_or_create_group(original_recipient)
 
         self.copy_email_to_group(original_recipient, message)
+
+        self.trash_caught_email(message)
 
     def find_or_create_group(self, group_address: str):
         try:
@@ -85,4 +82,7 @@ class MailProcessor:
         mail_body = StringIO(urlsafe_b64decode(raw_mail['raw']).decode("utf-8"))
         mail = MediaIoBaseUpload(mail_body, mimetype="message/rfc822")
 
-        self.group_archive_client.archive().insert(groupId=group_address, media_body=mail)
+        self.group_archive_client.archive().insert(groupId=group_address, media_body=mail).execute()
+
+    def trash_caught_email(self, message: dict):
+        self.gmail_client.users().messages().trash(userId='me', id=message["id"]).execute()

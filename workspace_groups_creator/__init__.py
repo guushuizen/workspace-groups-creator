@@ -20,6 +20,7 @@ from workspace_groups_creator.mail_processor import MailProcessor
 SCOPES = [
     "https://www.googleapis.com/auth/gmail.labels",
     "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/gmail.modify",
     "https://www.googleapis.com/auth/admin.directory.group",
     "https://www.googleapis.com/auth/apps.groups.settings",
     "https://www.googleapis.com/auth/apps.groups.migration"
