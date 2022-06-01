@@ -37,6 +37,8 @@ class MailProcessor:
 
             return True
 
+        return False
+
     def process_mail(self, message_id: str):
         message = self.gmail_client.users().messages().get(userId="me", id=message_id, format="full").execute()
 
@@ -76,10 +78,6 @@ class MailProcessor:
             "email": os.environ.get("MAIN_EMAIL_ADDRESS", ""),
             "role": "OWNER",
             "delivery_settings": "ALL_MAIL",
-        }).execute()
-
-        self.group_settings_client.groups().patch(group_address, {
-            "allowWebPosting": 'true',
         }).execute()
 
     def copy_email_to_group(self, group_address: str, message: dict):
