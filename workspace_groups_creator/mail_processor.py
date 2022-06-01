@@ -42,6 +42,10 @@ class MailProcessor:
 
         original_recipient = next((h["value"] for h in message['payload']['headers'] if h["name"] == "To"), None)
 
+        subject = next((h["value"] for h in message['payload']['headers'] if h["name"] == "Subject"), None)
+
+        print(f"Starting processing of new message '{subject}'...")
+
         assert original_recipient
 
         self.find_or_create_group(original_recipient)
@@ -49,6 +53,8 @@ class MailProcessor:
         self.copy_email_to_group(original_recipient, message)
 
         self.trash_caught_email(message)
+
+        print(f"Processed message '{subject}'!")
 
     def find_or_create_group(self, group_address: str):
         try:
