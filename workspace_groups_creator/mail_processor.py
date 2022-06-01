@@ -52,7 +52,7 @@ class MailProcessor:
 
         self.copy_email_to_group(original_recipient, message)
 
-        self.trash_caught_email(message)
+        self.move_email_to_inbox(message)
 
         print(f"Processed message '{subject}'!")
 
@@ -90,5 +90,8 @@ class MailProcessor:
 
         self.group_archive_client.archive().insert(groupId=group_address, media_body=mail).execute()
 
-    def trash_caught_email(self, message: dict):
-        self.gmail_client.users().messages().trash(userId='me', id=message["id"]).execute()
+    def move_email_to_inbox(self, message: dict):
+        self.gmail_client.users().messages().modify(userId="me", id=message["id"], body={
+            "addLabelIds": ["INBOX"],
+            "removeLabelIds": [self.catch_all_label_id]
+        }).execute()
