@@ -21,7 +21,8 @@ SCOPES = [
     "https://www.googleapis.com/auth/gmail.labels",
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/admin.directory.group",
-    "https://www.googleapis.com/auth/apps.groups.settings"
+    "https://www.googleapis.com/auth/apps.groups.settings",
+    "https://www.googleapis.com/auth/apps.groups.migration"
 ]
 
 

@@ -1,9 +1,12 @@
+from base64 import urlsafe_b64decode
+from io import StringIO
 import os
 from time import sleep
 
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaIoBaseUpload
 
 
 class MailProcessor:
@@ -14,6 +17,7 @@ class MailProcessor:
         self.gmail_client = build("gmail", "v1", credentials=credentials)
         self.groups_client = build("admin", "directory_v1", credentials=credentials)
         self.group_settings_client = build("groupssettings", "v1", credentials=credentials)
+        self.group_archive_client = build("groupsmigration", "v1", credentials=credentials)
 
     def work_indefinitely(self):
         while True:
@@ -47,11 +51,11 @@ class MailProcessor:
 
         self.find_or_create_group(original_recipient)
 
-        self.forward_email(message)
+        self.copy_email_to_group(original_recipient, message)
 
     def find_or_create_group(self, group_address: str):
         try:
-            find_response = self.groups_client.groups().get(groupKey=group_address).execute()
+            self.groups_client.groups().get(groupKey=group_address).execute()
         except HttpError as error:
             if error.status_code == 404:
                 self.create_and_setup_group(group_address)
@@ -75,5 +79,10 @@ class MailProcessor:
             "allowWebPosting": 'true',
         }).execute()
 
-    def forward_email(self, message: dict):
-        pass
+    def copy_email_to_group(self, group_address: str, message: dict):
+        raw_mail = self.gmail_client.users().messages().get(userId="me", id=message['id'], format="raw").execute()
+
+        mail_body = StringIO(urlsafe_b64decode(raw_mail['raw']).decode("utf-8"))
+        mail = MediaIoBaseUpload(mail_body, mimetype="message/rfc822")
+
+        self.group_archive_client.archive().insert(groupId=group_address, media_body=mail)
