@@ -1,5 +1,5 @@
 .idea/
 __pycache__/
 .env
-client_secret.json
+service_account_key.json
 

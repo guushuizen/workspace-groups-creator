@@ -10,10 +10,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import Resource
-from googleapiclient.discovery import build
+from oauth2client.service_account import ServiceAccountCredentials
 
 from workspace_groups_creator.mail_processor import MailProcessor
 
@@ -26,40 +23,19 @@ SCOPES = [
     "https://www.googleapis.com/auth/apps.groups.migration"
 ]
 
-
-def get_credentials() -> Credentials:
-    client_secret_path = os.environ["CLIENT_SECRET_PATH"] if "CLIENT_SECRET_PATH" in os.environ else \
-        Path(os.getcwd()) / "../client_secret.json"
-
-    assert os.path.exists(client_secret_path)
-
-    installed_app_flow = InstalledAppFlow.from_client_secrets_file(client_secret_path, scopes=SCOPES)
-
-    received_credentials = installed_app_flow.run_local_server(open_browser=False)
-
-    return received_credentials
-
-
-def find_label_id(gmail_client: Resource) -> str:
-    labels = gmail_client.users().labels().list(userId="me").execute()
-
-    found_label_id = next((label['id'] for label in labels.get("labels", []) if
-                    label['name'].upper() == os.environ.get("GMAIL_CATCHALL_LABEL_NAME", "Catch-All").upper()), None)
-
-    assert found_label_id
-
-    return found_label_id
-
-
 if __name__ == "__main__":
     load_dotenv()
 
-    credentials = get_credentials()
+    service_account_key_path = os.environ["SERVICE_ACCOUNT_KEY_PATH"] if "SERVICE_ACCOUNT_KEY_PATH" in os.environ else \
+        Path(os.getcwd()) / "../service_account_key.json"
 
-    client: Resource = build("gmail", 'v1', credentials=credentials)
+    service_account_email = os.environ["SERVICE_ACCOUNT_EMAIL"]
 
-    label_id = find_label_id(client)
+    service_account_credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        service_account_email,
+        service_account_key_path,
+    )
 
-    client.close()
+    credentials = service_account_credentials.create_delegated(os.environ["MAIN_EMAIL_ADDRESS"])
 
-    MailProcessor(credentials, label_id).work_indefinitely()
+    MailProcessor(credentials).work_indefinitely()

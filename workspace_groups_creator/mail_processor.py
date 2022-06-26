@@ -1,6 +1,7 @@
 from base64 import urlsafe_b64decode
 from io import StringIO
 import os
+import re
 from time import sleep
 
 from google.oauth2.credentials import Credentials
@@ -10,14 +11,26 @@ from googleapiclient.http import MediaIoBaseUpload
 
 
 class MailProcessor:
-    def __init__(self, credentials: Credentials, catch_all_label_id: str):
-        self.credentials = credentials
-        self.catch_all_label_id = catch_all_label_id
-
+    def __init__(self, credentials: Credentials):
         self.gmail_client = build("gmail", "v1", credentials=credentials)
         self.groups_client = build("admin", "directory_v1", credentials=credentials)
         self.group_settings_client = build("groupssettings", "v1", credentials=credentials)
         self.group_archive_client = build("groupsmigration", "v1", credentials=credentials)
+
+        self.catch_all_label_id = self.find_label_id()
+        self.credentials = credentials
+
+    def find_label_id(self) -> str:
+        labels = self.gmail_client.users().labels().list(userId="me").execute()
+
+        found_label_id = next((
+            label['id'] for label in labels.get("labels", []) if
+            label['name'].upper() == os.environ.get("GMAIL_CATCHALL_LABEL_NAME", "Catch-All").upper()
+         ), None)
+
+        assert found_label_id
+
+        return found_label_id
 
     def work_indefinitely(self):
         while True:
@@ -39,10 +52,19 @@ class MailProcessor:
 
         return False
 
+    def parse_to_email_from_header(self, header: str):
+        groups = re.match(r'^\S.*\s<(\S*)>$', header)
+
+        if groups:
+            return groups[1]
+        else:
+            return header
+
     def process_mail(self, message_id: str):
         message = self.gmail_client.users().messages().get(userId="me", id=message_id, format="full").execute()
 
         original_recipient = next((h["value"] for h in message['payload']['headers'] if h["name"] == "To"), None)
+        original_recipient = self.parse_to_email_from_header(original_recipient)
 
         subject = next((h["value"] for h in message['payload']['headers'] if h["name"] == "Subject"), None)
 
