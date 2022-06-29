@@ -5,7 +5,7 @@ Steps:
 3. Find label like "Catch-All" in GMail for authenticated user
 4. Set up watcher to GMail PubSub for new e-mails
 """
-
+import json
 import os
 from pathlib import Path
 
@@ -23,17 +23,16 @@ SCOPES = [
     "https://www.googleapis.com/auth/apps.groups.migration"
 ]
 
-if __name__ == "__main__":
+def start():
     load_dotenv()
 
-    service_account_key_path = os.environ["SERVICE_ACCOUNT_KEY_PATH"] if "SERVICE_ACCOUNT_KEY_PATH" in os.environ else \
-        Path(os.getcwd()) / "../service_account_key.json"
+    # service_account_key_path = os.environ["SERVICE_ACCOUNT_KEY_PATH"] if "SERVICE_ACCOUNT_KEY_PATH" in os.environ else \
+    #     Path(os.getcwd()) / "../service_account_key.json"
+    service_account = json.loads(os.environ["SERVICE_ACCOUNT_JSON"])
 
-    service_account_email = os.environ["SERVICE_ACCOUNT_EMAIL"]
-
-    service_account_credentials = ServiceAccountCredentials.from_json_keyfile_name(
-        service_account_email,
-        service_account_key_path,
+    service_account_credentials = ServiceAccountCredentials.from_json_keyfile_dict(
+        service_account,
+        scopes=SCOPES
     )
 
     credentials = service_account_credentials.create_delegated(os.environ["MAIN_EMAIL_ADDRESS"])

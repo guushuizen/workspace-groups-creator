@@ -33,6 +33,7 @@ class MailProcessor:
         return found_label_id
 
     def work_indefinitely(self):
+        print('Starting work...')
         while True:
             if not self.find_and_process_new_mails():
                 sleep(10)
